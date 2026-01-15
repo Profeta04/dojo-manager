@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { FinancialDashboard } from "@/components/payments/FinancialDashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -517,6 +518,11 @@ export default function PaymentsPage() {
           </div>
         )}
       </div>
+
+      {/* Financial Dashboard Charts */}
+      {canManageStudents && payments && payments.length > 0 && (
+        <FinancialDashboard payments={payments} />
+      )}
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
