@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { BeltBadge } from "@/components/shared/BeltBadge";
+import { RegistrationStatusBadge } from "@/components/shared/StatusBadge";
+import { SenseiActions } from "@/components/senseis/SenseiActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +39,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Plus, UserCog, Mail, Phone, Loader2 } from "lucide-react";
 import { z } from "zod";
-import { BELT_LABELS, BeltGrade } from "@/lib/constants";
+import { BELT_LABELS } from "@/lib/constants";
 import { Database } from "@/integrations/supabase/types";
 
 type BeltGradeEnum = Database["public"]["Enums"]["belt_grade"];
@@ -65,12 +67,6 @@ export default function Senseis() {
   const [beltGrade, setBeltGrade] = useState<string>("");
   const [password, setPassword] = useState("");
 
-  // Redirect if not admin
-  if (!authLoading && !isAdmin) {
-    navigate("/dashboard");
-    return null;
-  }
-
   const { data: senseis, isLoading } = useQuery({
     queryKey: ["senseis"],
     queryFn: async () => {
@@ -94,6 +90,12 @@ export default function Senseis() {
     },
     enabled: !!user && isAdmin,
   });
+
+  // Redirect if not admin
+  if (!authLoading && !isAdmin) {
+    navigate("/dashboard");
+    return null;
+  }
 
   const resetForm = () => {
     setName("");
@@ -306,6 +308,8 @@ export default function Senseis() {
                   <TableHead>Email</TableHead>
                   <TableHead>Telefone</TableHead>
                   <TableHead>Graduação</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-12">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -334,6 +338,12 @@ export default function Senseis() {
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <RegistrationStatusBadge status={sensei.registration_status || "pendente"} />
+                    </TableCell>
+                    <TableCell>
+                      <SenseiActions sensei={sensei} />
                     </TableCell>
                   </TableRow>
                 ))}
