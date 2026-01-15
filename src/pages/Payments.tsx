@@ -33,24 +33,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   CreditCard, 
   Plus, 
   Loader2, 
   User, 
-  Calendar, 
   DollarSign, 
   CheckCircle2, 
   Clock, 
   AlertTriangle,
-  Receipt
+  Receipt,
+  Users
 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO } from "date-fns";
@@ -59,6 +53,7 @@ import { PaymentStatus, PAYMENT_STATUS_LABELS } from "@/lib/constants";
 
 type Profile = Tables<"profiles">;
 type Payment = Tables<"payments">;
+type Class = Tables<"classes">;
 
 interface PaymentWithStudent extends Payment {
   studentName: string;
@@ -76,14 +71,25 @@ export default function PaymentsPage() {
   const queryClient = useQueryClient();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentWithStudent | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [batchLoading, setBatchLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all");
 
   // Form state
   const [formData, setFormData] = useState({
     student_id: "",
+    reference_month: format(new Date(), "yyyy-MM"),
+    due_date: format(new Date(), "yyyy-MM-dd"),
+    amount: "",
+    notes: "",
+  });
+
+  // Batch form state
+  const [batchFormData, setBatchFormData] = useState({
+    class_id: "",
     reference_month: format(new Date(), "yyyy-MM"),
     due_date: format(new Date(), "yyyy-MM-dd"),
     amount: "",
@@ -113,6 +119,22 @@ export default function PaymentsPage() {
 
       if (error) throw error;
       return data as Profile[];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch active classes
+  const { data: classes, isLoading: classesLoading } = useQuery({
+    queryKey: ["active-classes-payments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("classes")
+        .select("*")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data as Class[];
     },
     enabled: !!user,
   });
@@ -163,6 +185,16 @@ export default function PaymentsPage() {
     });
   };
 
+  const resetBatchForm = () => {
+    setBatchFormData({
+      class_id: "",
+      reference_month: format(new Date(), "yyyy-MM"),
+      due_date: format(new Date(), "yyyy-MM-dd"),
+      amount: "",
+      notes: "",
+    });
+  };
+
   const handleCreatePayment = async () => {
     if (!formData.student_id || !formData.amount || !user) return;
 
@@ -197,6 +229,88 @@ export default function PaymentsPage() {
       });
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const handleBatchCreate = async () => {
+    if (!batchFormData.class_id || !batchFormData.amount || !user) return;
+
+    setBatchLoading(true);
+
+    try {
+      // Fetch students enrolled in the class
+      const { data: enrollments, error: enrollmentError } = await supabase
+        .from("class_students")
+        .select("student_id")
+        .eq("class_id", batchFormData.class_id);
+
+      if (enrollmentError) throw enrollmentError;
+
+      if (!enrollments || enrollments.length === 0) {
+        toast({
+          title: "Nenhum aluno encontrado",
+          description: "Esta turma não possui alunos matriculados.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check which students already have payment for this month
+      const studentIds = enrollments.map((e) => e.student_id);
+      const { data: existingPayments, error: existingError } = await supabase
+        .from("payments")
+        .select("student_id")
+        .in("student_id", studentIds)
+        .eq("reference_month", batchFormData.reference_month);
+
+      if (existingError) throw existingError;
+
+      const existingStudentIds = new Set(existingPayments?.map((p) => p.student_id) || []);
+      const newStudentIds = studentIds.filter((id) => !existingStudentIds.has(id));
+
+      if (newStudentIds.length === 0) {
+        toast({
+          title: "Pagamentos já existem",
+          description: "Todos os alunos desta turma já possuem pagamento para este mês.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create payments for students that don't have one yet
+      const paymentsToInsert = newStudentIds.map((studentId) => ({
+        student_id: studentId,
+        reference_month: batchFormData.reference_month,
+        due_date: batchFormData.due_date,
+        amount: parseFloat(batchFormData.amount),
+        notes: batchFormData.notes || null,
+        registered_by: user.id,
+        status: "pendente" as const,
+      }));
+
+      const { error } = await supabase.from("payments").insert(paymentsToInsert);
+
+      if (error) throw error;
+
+      const skippedCount = existingStudentIds.size;
+      const createdCount = newStudentIds.length;
+
+      toast({
+        title: "Pagamentos gerados!",
+        description: `${createdCount} pagamento(s) criado(s)${skippedCount > 0 ? `. ${skippedCount} aluno(s) já possuíam pagamento para este mês.` : "."}`,
+      });
+
+      setBatchDialogOpen(false);
+      resetBatchForm();
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao gerar pagamentos em lote",
+        variant: "destructive",
+      });
+    } finally {
+      setBatchLoading(false);
     }
   };
 
@@ -301,7 +415,7 @@ export default function PaymentsPage() {
       .reduce((acc, p) => acc + p.amount, 0) || 0,
   };
 
-  if (authLoading || studentsLoading || paymentsLoading) {
+  if (authLoading || studentsLoading || paymentsLoading || classesLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
   }
 
@@ -311,10 +425,16 @@ export default function PaymentsPage() {
         <PageHeader title="Pagamentos" description="Controle de mensalidades dos alunos" />
         
         {canManageStudents && (
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Pagamento
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setBatchDialogOpen(true)}>
+              <Users className="h-4 w-4 mr-2" />
+              Gerar em Lote
+            </Button>
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Pagamento
+            </Button>
+          </div>
         )}
       </div>
 
@@ -565,6 +685,128 @@ export default function PaymentsPage() {
                   <>
                     <CreditCard className="mr-2 h-4 w-4" />
                     Criar Pagamento
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Batch Payment Dialog */}
+      <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Gerar Pagamentos em Lote
+            </DialogTitle>
+            <DialogDescription>
+              Criar pagamentos para todos os alunos matriculados em uma turma
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="batch_class">Turma</Label>
+              <Select
+                value={batchFormData.class_id}
+                onValueChange={(v) => setBatchFormData({ ...batchFormData, class_id: v })}
+              >
+                <SelectTrigger id="batch_class">
+                  <SelectValue placeholder="Selecionar turma" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="batch_reference_month">Mês de Referência</Label>
+                <Input
+                  id="batch_reference_month"
+                  type="month"
+                  value={batchFormData.reference_month}
+                  onChange={(e) =>
+                    setBatchFormData({ ...batchFormData, reference_month: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="batch_due_date">Data de Vencimento</Label>
+                <Input
+                  id="batch_due_date"
+                  type="date"
+                  value={batchFormData.due_date}
+                  onChange={(e) =>
+                    setBatchFormData({ ...batchFormData, due_date: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="batch_amount">Valor (R$)</Label>
+              <Input
+                id="batch_amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="150.00"
+                value={batchFormData.amount}
+                onChange={(e) =>
+                  setBatchFormData({ ...batchFormData, amount: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="batch_notes">Observações (opcional)</Label>
+              <Textarea
+                id="batch_notes"
+                value={batchFormData.notes}
+                onChange={(e) => setBatchFormData({ ...batchFormData, notes: e.target.value })}
+                placeholder="Aplicado a todos os pagamentos gerados"
+                rows={2}
+              />
+            </div>
+
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                💡 Alunos que já possuem pagamento para o mês selecionado serão ignorados automaticamente.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setBatchDialogOpen(false);
+                  resetBatchForm();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleBatchCreate}
+                disabled={!batchFormData.class_id || !batchFormData.amount || batchLoading}
+              >
+                {batchLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Users className="mr-2 h-4 w-4" />
+                    Gerar Pagamentos
                   </>
                 )}
               </Button>
