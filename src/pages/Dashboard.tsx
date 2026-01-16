@@ -1,16 +1,19 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { ExportReportButton } from "@/components/dashboard/ExportReportButton";
+import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
 import { AlertCircle } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, loading: authLoading, profile, isAdmin, canManageStudents } = useAuth();
+  const { hasMinors } = useGuardianMinors();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -48,6 +51,13 @@ export default function Dashboard() {
               Seu cadastro está sendo analisado. Aguarde a confirmação de um Sensei para ter acesso completo ao sistema.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Guardian Dashboard - Shows if user has linked minors */}
+      {hasMinors && (
+        <div className="mb-6">
+          <GuardianDashboard />
         </div>
       )}
 
