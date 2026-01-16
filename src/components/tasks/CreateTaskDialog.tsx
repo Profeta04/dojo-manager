@@ -1,0 +1,231 @@
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useTasks, TaskPriority } from "@/hooks/useTasks";
+import { Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+const taskSchema = z.object({
+  title: z.string().min(1, "Título obrigatório").max(100, "Máximo 100 caracteres"),
+  description: z.string().max(500, "Máximo 500 caracteres").optional(),
+  assigned_to: z.string().min(1, "Selecione um aluno"),
+  due_date: z.string().optional(),
+  priority: z.enum(["baixa", "normal", "alta"]),
+});
+
+type TaskFormData = z.infer<typeof taskSchema>;
+
+interface Student {
+  user_id: string;
+  name: string;
+}
+
+export function CreateTaskDialog() {
+  const [open, setOpen] = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const { createTask } = useTasks();
+
+  const form = useForm<TaskFormData>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      assigned_to: "",
+      due_date: "",
+      priority: "normal",
+    },
+  });
+
+  useEffect(() => {
+    if (open) {
+      fetchStudents();
+    }
+  }, [open]);
+
+  const fetchStudents = async () => {
+    setLoadingStudents(true);
+    try {
+      // Fetch all approved students
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name")
+        .eq("registration_status", "aprovado")
+        .order("name");
+
+      // Also get users with student role
+      const { data: studentRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "student");
+
+      const studentUserIds = new Set(studentRoles?.map(r => r.user_id) || []);
+      
+      // Filter profiles to only include students
+      const studentProfiles = profiles?.filter(p => studentUserIds.has(p.user_id)) || [];
+      
+      setStudents(studentProfiles);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  const onSubmit = async (data: TaskFormData) => {
+    try {
+      await createTask.mutateAsync({
+        title: data.title,
+        description: data.description,
+        assigned_to: data.assigned_to,
+        due_date: data.due_date || undefined,
+        priority: data.priority as TaskPriority,
+      });
+      toast.success("Tarefa criada com sucesso!");
+      form.reset();
+      setOpen(false);
+    } catch {
+      toast.error("Erro ao criar tarefa");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" />
+          Nova Tarefa
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Criar Nova Tarefa</DialogTitle>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Título</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Praticar ukemi" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição (opcional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Detalhes sobre a tarefa..."
+                      className="resize-none"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="assigned_to"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atribuir para</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingStudents ? "Carregando..." : "Selecione um aluno"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {students.map((student) => (
+                        <SelectItem key={student.user_id} value={student.user_id}>
+                          {student.name}
+                        </SelectItem>
+                      ))}
+                      {students.length === 0 && !loadingStudents && (
+                        <SelectItem value="none" disabled>
+                          Nenhum aluno encontrado
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="due_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prazo (opcional)</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prioridade</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="baixa">Baixa</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="alta">Alta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={createTask.isPending}>
+                {createTask.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Criar Tarefa
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
