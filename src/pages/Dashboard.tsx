@@ -8,11 +8,13 @@ import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { ExportReportButton } from "@/components/dashboard/ExportReportButton";
 import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
+import { StudentTasksDashboard } from "@/components/tasks/StudentTasksDashboard";
+import { TasksManagement } from "@/components/tasks/TasksManagement";
 import { AlertCircle } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, loading: authLoading, profile, isAdmin, canManageStudents } = useAuth();
+  const { user, loading: authLoading, profile, isAdmin, isStudent, canManageStudents } = useAuth();
   const { hasMinors } = useGuardianMinors();
 
   useEffect(() => {
@@ -63,6 +65,15 @@ export default function Dashboard() {
 
       {/* Dashboard Stats Component */}
       <DashboardStats isAdmin={isAdmin} canManageStudents={canManageStudents} />
+
+      {/* Tasks Section */}
+      <div className="mt-8">
+        {isStudent && !canManageStudents ? (
+          <StudentTasksDashboard />
+        ) : canManageStudents ? (
+          <TasksManagement />
+        ) : null}
+      </div>
 
       {!isPending && (
         <div className="mt-8 p-6 bg-card rounded-lg border border-border">

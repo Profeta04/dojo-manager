@@ -1,0 +1,182 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./useAuth";
+import { useEffect } from "react";
+
+export type TaskStatus = "pendente" | "concluida" | "cancelada";
+export type TaskPriority = "baixa" | "normal" | "alta";
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  assigned_to: string;
+  assigned_by: string;
+  due_date: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskWithAssignee extends Task {
+  assignee_name?: string;
+  assigner_name?: string;
+}
+
+export function useTasks() {
+  const { user, isStudent, canManageStudents } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch tasks for current user (students see their own, admins/senseis see all)
+  const { data: tasks = [], isLoading, refetch } = useQuery({
+    queryKey: ["tasks", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      // First get tasks
+      let query = supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      // Students only see their own tasks
+      if (isStudent && !canManageStudents) {
+        query = query.eq("assigned_to", user.id);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Fetch profile names for assigned_to and assigned_by
+      if (data && data.length > 0) {
+        const userIds = [...new Set([
+          ...data.map(t => t.assigned_to),
+          ...data.map(t => t.assigned_by)
+        ])];
+
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, name")
+          .in("user_id", userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+
+        return data.map(task => ({
+          ...task,
+          assignee_name: profileMap.get(task.assigned_to) || "Desconhecido",
+          assigner_name: profileMap.get(task.assigned_by) || "Desconhecido",
+        })) as TaskWithAssignee[];
+      }
+
+      return data as TaskWithAssignee[];
+    },
+    enabled: !!user,
+  });
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("tasks-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tasks",
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, refetch]);
+
+  // Create task mutation
+  const createTask = useMutation({
+    mutationFn: async (taskData: {
+      title: string;
+      description?: string;
+      assigned_to: string;
+      due_date?: string;
+      priority?: TaskPriority;
+    }) => {
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert({
+          title: taskData.title,
+          description: taskData.description || null,
+          assigned_to: taskData.assigned_to,
+          assigned_by: user.id,
+          due_date: taskData.due_date || null,
+          priority: taskData.priority || "normal",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  // Update task status mutation
+  const updateTaskStatus = useMutation({
+    mutationFn: async ({ taskId, status }: { taskId: string; status: TaskStatus }) => {
+      const updateData: { status: TaskStatus; completed_at?: string | null } = { status };
+      
+      if (status === "concluida") {
+        updateData.completed_at = new Date().toISOString();
+      } else {
+        updateData.completed_at = null;
+      }
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .update(updateData)
+        .eq("id", taskId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  // Delete task mutation
+  const deleteTask = useMutation({
+    mutationFn: async (taskId: string) => {
+      const { error } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("id", taskId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  return {
+    tasks,
+    isLoading,
+    createTask,
+    updateTaskStatus,
+    deleteTask,
+  };
+}
