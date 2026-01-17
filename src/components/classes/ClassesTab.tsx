@@ -142,7 +142,7 @@ export function ClassesTab() {
     enabled: !!user,
   });
 
-  // Fetch available students
+  // Fetch available students (excluding guardians)
   const { data: availableStudents } = useQuery({
     queryKey: ["available-students", selectedClass?.id],
     queryFn: async () => {
@@ -157,10 +157,23 @@ export function ClassesTab() {
 
       const studentUserIds = studentRoles.map((r) => r.user_id);
 
+      // Get all guardian user IDs (users who have minors linked to them)
+      const { data: guardianProfiles } = await supabase
+        .from("profiles")
+        .select("guardian_user_id")
+        .not("guardian_user_id", "is", null);
+
+      const guardianUserIds = [...new Set(guardianProfiles?.map((p) => p.guardian_user_id).filter(Boolean) || [])];
+
+      // Exclude guardian user IDs from student list
+      const filteredStudentUserIds = studentUserIds.filter((id) => !guardianUserIds.includes(id));
+
+      if (filteredStudentUserIds.length === 0) return [];
+
       const { data: profiles } = await supabase
         .from("profiles")
         .select("*")
-        .in("user_id", studentUserIds)
+        .in("user_id", filteredStudentUserIds)
         .eq("registration_status", "aprovado");
 
       if (!profiles) return [];
