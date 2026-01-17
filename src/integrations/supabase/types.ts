@@ -132,6 +132,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          dojo_id: string | null
           id: string
           is_active: boolean | null
           max_students: number | null
@@ -143,6 +144,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          dojo_id?: string | null
           id?: string
           is_active?: boolean | null
           max_students?: number | null
@@ -154,6 +156,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          dojo_id?: string | null
           id?: string
           is_active?: boolean | null
           max_students?: number | null
@@ -161,6 +164,138 @@ export type Database = {
           schedule?: string
           sensei_id?: string
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojo_owners: {
+        Row: {
+          created_at: string
+          dojo_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dojo_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dojo_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_owners_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojo_senseis: {
+        Row: {
+          created_at: string
+          dojo_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dojo_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dojo_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_senseis_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dojos: {
+        Row: {
+          address: string | null
+          color_accent: string | null
+          color_background: string | null
+          color_foreground: string | null
+          color_muted: string | null
+          color_primary: string | null
+          color_secondary: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          monthly_fee: number | null
+          name: string
+          payment_due_day: number | null
+          phone: string | null
+          pix_key: string | null
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          address?: string | null
+          color_accent?: string | null
+          color_background?: string | null
+          color_foreground?: string | null
+          color_muted?: string | null
+          color_primary?: string | null
+          color_secondary?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          monthly_fee?: number | null
+          name: string
+          payment_due_day?: number | null
+          phone?: string | null
+          pix_key?: string | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          address?: string | null
+          color_accent?: string | null
+          color_background?: string | null
+          color_foreground?: string | null
+          color_muted?: string | null
+          color_primary?: string | null
+          color_secondary?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          monthly_fee?: number | null
+          name?: string
+          payment_due_day?: number | null
+          phone?: string | null
+          pix_key?: string | null
+          updated_at?: string
+          welcome_message?: string | null
         }
         Relationships: []
       }
@@ -270,6 +405,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          dojo_id: string | null
           due_date: string
           id: string
           notes: string | null
@@ -284,6 +420,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          dojo_id?: string | null
           due_date: string
           id?: string
           notes?: string | null
@@ -298,6 +435,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          dojo_id?: string | null
           due_date?: string
           id?: string
           notes?: string | null
@@ -309,7 +447,15 @@ export type Database = {
           student_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payments_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -319,6 +465,7 @@ export type Database = {
           belt_grade: Database["public"]["Enums"]["belt_grade"] | null
           birth_date: string | null
           created_at: string
+          dojo_id: string | null
           email: string
           guardian_email: string | null
           guardian_user_id: string | null
@@ -338,6 +485,7 @@ export type Database = {
           belt_grade?: Database["public"]["Enums"]["belt_grade"] | null
           birth_date?: string | null
           created_at?: string
+          dojo_id?: string | null
           email: string
           guardian_email?: string | null
           guardian_user_id?: string | null
@@ -357,6 +505,7 @@ export type Database = {
           belt_grade?: Database["public"]["Enums"]["belt_grade"] | null
           birth_date?: string | null
           created_at?: string
+          dojo_id?: string | null
           email?: string
           guardian_email?: string | null
           guardian_user_id?: string | null
@@ -369,7 +518,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {
@@ -476,6 +633,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_user_dojos: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -483,10 +641,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_dojo_owner: {
+        Args: { _dojo_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_dojo_sensei: {
+        Args: { _dojo_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_guardian_of: {
         Args: { _guardian_id: string; _profile_user_id: string }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       remove_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -496,7 +663,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "sensei" | "student"
+      app_role: "admin" | "sensei" | "student" | "super_admin" | "dono"
       belt_grade:
         | "branca"
         | "cinza"
@@ -645,7 +812,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "sensei", "student"],
+      app_role: ["admin", "sensei", "student", "super_admin", "dono"],
       belt_grade: [
         "branca",
         "cinza",
