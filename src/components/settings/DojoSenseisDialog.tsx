@@ -123,21 +123,21 @@ export function DojoSenseisDialog({ dojoId, onClose }: Props) {
 
   return (
     <Dialog open={!!dojoId} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-[95vw] max-w-lg mx-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" aria-hidden="true" />
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Users className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" aria-hidden="true" />
             Gerenciar Senseis
           </DialogTitle>
-          <DialogDescription>
-            Vincule ou desvincule Senseis deste dojo. O usuário deve ter a role de Sensei.
+          <DialogDescription className="text-xs sm:text-sm">
+            Vincule ou desvincule Senseis deste dojo.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 pt-4">
+        <div className="space-y-3 sm:space-y-4 pt-2 sm:pt-4">
           {/* Add Sensei Form */}
           {isAdding ? (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1">
                 <Label htmlFor="sensei-email" className="sr-only">Email do Sensei</Label>
                 <Input
@@ -147,21 +147,24 @@ export function DojoSenseisDialog({ dojoId, onClose }: Props) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                  className="h-9 text-sm"
                 />
               </div>
-              <Button onClick={handleAdd} disabled={addSenseiMutation.isPending}>
-                {addSenseiMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Vincular"
-                )}
-              </Button>
-              <Button variant="outline" onClick={() => setIsAdding(false)}>
-                Cancelar
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleAdd} disabled={addSenseiMutation.isPending} size="sm" className="flex-1 sm:flex-none">
+                  {addSenseiMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Vincular"
+                  )}
+                </Button>
+                <Button variant="outline" onClick={() => setIsAdding(false)} size="sm" className="flex-1 sm:flex-none">
+                  Cancelar
+                </Button>
+              </div>
             </div>
           ) : (
-            <Button onClick={() => setIsAdding(true)} variant="outline" className="w-full">
+            <Button onClick={() => setIsAdding(true)} variant="outline" className="w-full h-9 text-sm">
               <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
               Vincular Sensei
             </Button>
@@ -173,38 +176,50 @@ export function DojoSenseisDialog({ dojoId, onClose }: Props) {
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           ) : !senseis || senseis.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">
+            <p className="text-center text-muted-foreground py-4 text-sm">
               Nenhum Sensei vinculado a este dojo.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead className="w-16"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {senseis.map((sensei) => (
-                  <TableRow key={sensei.id}>
-                    <TableCell>{sensei.profile?.name || "N/A"}</TableCell>
-                    <TableCell>{sensei.profile?.email || "N/A"}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeSenseiMutation.mutate(sensei.id)}
-                        disabled={removeSenseiMutation.isPending}
-                        aria-label="Desvincular Sensei"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto -mx-2 px-2">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs sm:text-sm">Nome</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden xs:table-cell">Email</TableHead>
+                    <TableHead className="w-10 sm:w-16"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {senseis.map((sensei) => (
+                    <TableRow key={sensei.id}>
+                      <TableCell className="text-xs sm:text-sm py-2">
+                        <div>
+                          <span className="block truncate max-w-[120px] sm:max-w-none">{sensei.profile?.name || "N/A"}</span>
+                          <span className="block xs:hidden text-muted-foreground truncate max-w-[120px]">
+                            {sensei.profile?.email || "N/A"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs sm:text-sm py-2 hidden xs:table-cell">
+                        <span className="truncate max-w-[150px] block">{sensei.profile?.email || "N/A"}</span>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => removeSenseiMutation.mutate(sensei.id)}
+                          disabled={removeSenseiMutation.isPending}
+                          aria-label="Desvincular Sensei"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </div>
       </DialogContent>
