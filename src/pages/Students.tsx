@@ -31,10 +31,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Clock, Mail, Loader2 } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
+
+interface GuardianWithMinors {
+  guardian: Profile;
+  minors: Profile[];
+}
 
 export default function Students() {
   const navigate = useNavigate();
@@ -45,6 +50,7 @@ export default function Students() {
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [expandedGuardians, setExpandedGuardians] = useState<Set<string>>(new Set());
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students"],
@@ -87,6 +93,44 @@ export default function Students() {
       const { data: profiles } = await query;
 
       return profiles || [];
+    },
+    enabled: !!user && canManageStudents,
+  });
+
+  // Fetch guardians with their minors
+  const { data: guardiansWithMinors, isLoading: isLoadingGuardians } = useQuery({
+    queryKey: ["guardians-with-minors"],
+    queryFn: async () => {
+      // Get all profiles that have a guardian (minors)
+      const { data: minorProfiles } = await supabase
+        .from("profiles")
+        .select("*")
+        .not("guardian_user_id", "is", null);
+
+      if (!minorProfiles || minorProfiles.length === 0) return [];
+
+      // Get unique guardian user IDs
+      const guardianUserIds = [...new Set(minorProfiles.map((p) => p.guardian_user_id).filter(Boolean))] as string[];
+
+      // Fetch guardian profiles
+      const { data: guardianProfiles } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("user_id", guardianUserIds);
+
+      if (!guardianProfiles) return [];
+
+      // Group minors by guardian
+      const guardiansMap = new Map<string, GuardianWithMinors>();
+      
+      for (const guardian of guardianProfiles) {
+        guardiansMap.set(guardian.user_id, {
+          guardian,
+          minors: minorProfiles.filter((m) => m.guardian_user_id === guardian.user_id),
+        });
+      }
+
+      return Array.from(guardiansMap.values());
     },
     enabled: !!user && canManageStudents,
   });
@@ -168,6 +212,18 @@ export default function Students() {
       setSelectedStudent(null);
       setActionType(null);
     }
+  };
+
+  const toggleGuardianExpanded = (guardianId: string) => {
+    setExpandedGuardians((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(guardianId)) {
+        newSet.delete(guardianId);
+      } else {
+        newSet.add(guardianId);
+      }
+      return newSet;
+    });
   };
 
   if (authLoading || isLoading) {
@@ -267,7 +323,7 @@ export default function Students() {
       </div>
 
       <Tabs defaultValue="pending" className="mt-6">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="pending" className="gap-2">
             <Clock className="h-4 w-4" />
             Pendentes
@@ -284,6 +340,10 @@ export default function Students() {
           <TabsTrigger value="rejected" className="gap-2">
             <UserX className="h-4 w-4" />
             Rejeitados ({rejectedStudents.length})
+          </TabsTrigger>
+          <TabsTrigger value="guardians" className="gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            Responsáveis ({guardiansWithMinors?.length || 0})
           </TabsTrigger>
         </TabsList>
 
@@ -336,6 +396,86 @@ export default function Students() {
                 <StudentTable data={rejectedStudents} />
               ) : (
                 <EmptyState message="Nenhum cadastro rejeitado." />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="guardians">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                Responsáveis e Dependentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingGuardians ? (
+                <LoadingSpinner />
+              ) : guardiansWithMinors && guardiansWithMinors.length > 0 ? (
+                <div className="space-y-4">
+                  {guardiansWithMinors.map(({ guardian, minors }) => {
+                    const isExpanded = expandedGuardians.has(guardian.id);
+                    return (
+                      <Card key={guardian.id} className="border-border/50">
+                        <CardContent className="p-4">
+                          <div
+                            className="flex items-center justify-between cursor-pointer"
+                            onClick={() => toggleGuardianExpanded(guardian.id)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <ShieldCheck className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{guardian.name}</p>
+                                <p className="text-sm text-muted-foreground">{guardian.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground">
+                                {minors.length} dependente{minors.length !== 1 ? "s" : ""}
+                              </span>
+                              {isExpanded ? (
+                                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                          </div>
+                          
+                          {isExpanded && (
+                            <div className="mt-4 pl-13 border-t pt-4">
+                              <p className="text-sm font-medium text-muted-foreground mb-3">Dependentes:</p>
+                              <div className="space-y-2">
+                                {minors.map((minor) => (
+                                  <div
+                                    key={minor.id}
+                                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <Users className="h-4 w-4 text-muted-foreground" />
+                                      <div>
+                                        <p className="font-medium text-sm">{minor.name}</p>
+                                        <p className="text-xs text-muted-foreground">{minor.email}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {minor.belt_grade && <BeltBadge grade={minor.belt_grade} />}
+                                      <RegistrationStatusBadge status={minor.registration_status || "pendente"} />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState message="Nenhum responsável cadastrado." />
               )}
             </CardContent>
           </Card>
