@@ -12,9 +12,9 @@ export default function Settings() {
   const navigate = useNavigate();
   const { isAdmin, isSuperAdmin, isDono, isSensei, loading: authLoading } = useAuth();
 
-  // Admin has full access, Sensei can only access theme
+  // Admin has full access, Sensei can also manage dojos
   const canAccessSettings = isAdmin || isSuperAdmin || isDono || isSensei;
-  const canManageDojos = isSuperAdmin || isAdmin;
+  const canManageDojos = isSuperAdmin || isAdmin || isSensei;
 
   // Redirect if not authorized
   if (!authLoading && !canAccessSettings) {
@@ -30,20 +30,7 @@ export default function Settings() {
     );
   }
 
-  // Sensei can only see theme settings
-  if (isSensei && !isAdmin && !isSuperAdmin && !isDono) {
-    return (
-      <DashboardLayout>
-        <PageHeader
-          title="Configurações"
-          description="Personalize o tema do sistema"
-        />
-        <div className="mt-6">
-          <DojoThemeSettings />
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Removed: Sensei now has access to full settings including Dojo management
 
   return (
     <DashboardLayout>
