@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, CheckCircle2, XCircle, Users, Clock, Loader2, Save, CalendarDays } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import { format, isToday, isFuture, isPast } from "date-fns";
+import { format, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type ClassSchedule = Tables<"class_schedule">;
@@ -47,8 +45,8 @@ interface StudentAttendance {
   notes: string;
 }
 
-export default function AttendancePage() {
-  const { user, canManageStudents, loading: authLoading } = useAuth();
+export function AttendanceTab() {
+  const { user, canManageStudents } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -74,14 +72,12 @@ export default function AttendancePage() {
 
       const schedulesWithDetails: ScheduleWithDetails[] = await Promise.all(
         schedulesData.map(async (schedule) => {
-          // Get class info
           const { data: classData } = await supabase
             .from("classes")
             .select("name")
             .eq("id", schedule.class_id)
             .single();
 
-          // Get enrolled students
           const { data: enrollments } = await supabase
             .from("class_students")
             .select("student_id")
@@ -98,7 +94,6 @@ export default function AttendancePage() {
             students = studentProfiles || [];
           }
 
-          // Get existing attendance for this class/date
           const { data: attendanceData } = await supabase
             .from("attendance")
             .select("*")
@@ -125,9 +120,9 @@ export default function AttendancePage() {
     queryFn: async () => {
       const today = new Date();
       const startDate = new Date(today);
-      startDate.setDate(startDate.getDate() - 30); // Last 30 days
+      startDate.setDate(startDate.getDate() - 30);
       const endDate = new Date(today);
-      endDate.setDate(endDate.getDate() + 30); // Next 30 days
+      endDate.setDate(endDate.getDate() + 30);
 
       const { data, error } = await supabase
         .from("class_schedule")
@@ -146,7 +141,6 @@ export default function AttendancePage() {
   const openAttendanceDialog = (schedule: ScheduleWithDetails) => {
     setSelectedSchedule(schedule);
     
-    // Initialize attendance list with existing data or defaults
     const initialList = schedule.students.map((student) => {
       const existing = schedule.attendance.find((a) => a.student_id === student.user_id);
       return {
@@ -192,14 +186,12 @@ export default function AttendancePage() {
     setFormLoading(true);
 
     try {
-      // Delete existing attendance for this class/date
       await supabase
         .from("attendance")
         .delete()
         .eq("class_id", selectedSchedule.class_id)
         .eq("date", selectedDate);
 
-      // Insert new attendance records
       const attendanceRecords = attendanceList.map((item) => ({
         class_id: selectedSchedule.class_id,
         student_id: item.student.user_id,
@@ -245,36 +237,32 @@ export default function AttendancePage() {
     return { present, total };
   };
 
-  if (authLoading || isLoading) {
-    return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
+  if (isLoading) {
+    return <LoadingSpinner />;
   }
 
   return (
-    <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <PageHeader title="Presenças" description="Controle de presença das aulas" />
-        
-        <div className="flex items-center gap-2">
-          <Label htmlFor="date-select" className="sr-only">Selecionar data</Label>
-          <Select value={selectedDate} onValueChange={setSelectedDate}>
-            <SelectTrigger className="w-[200px]" id="date-select">
-              <Calendar className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {availableDates?.map((date) => (
-                <SelectItem key={date} value={date}>
-                  {format(new Date(date + "T12:00:00"), "EEEE, dd/MM", { locale: ptBR })}
-                  {isToday(new Date(date + "T12:00:00")) && " (Hoje)"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Label htmlFor="date-select" className="sr-only">Selecionar data</Label>
+        <Select value={selectedDate} onValueChange={setSelectedDate}>
+          <SelectTrigger className="w-[200px]" id="date-select">
+            <Calendar className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availableDates?.map((date) => (
+              <SelectItem key={date} value={date}>
+                {format(new Date(date + "T12:00:00"), "EEEE, dd/MM", { locale: ptBR })}
+                {isToday(new Date(date + "T12:00:00")) && " (Hoje)"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Date indicator */}
-      <div className="mb-6">
+      <div>
         <Badge variant={isToday(new Date(selectedDate + "T12:00:00")) ? "default" : "secondary"} className="text-sm">
           <CalendarDays className="h-4 w-4 mr-1" />
           {format(new Date(selectedDate + "T12:00:00"), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
@@ -286,7 +274,6 @@ export default function AttendancePage() {
           {schedules.map((schedule) => {
             const status = getAttendanceStatus(schedule);
             const stats = getAttendanceStats(schedule);
-            const dateObj = new Date(schedule.date + "T12:00:00");
 
             return (
               <Card key={schedule.id}>
@@ -474,6 +461,6 @@ export default function AttendancePage() {
           </div>
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </div>
   );
 }

@@ -2,8 +2,6 @@ import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +18,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   CalendarDays, 
   Clock, 
-  MapPin,
   Users,
   GraduationCap,
   ChevronLeft,
@@ -40,8 +37,8 @@ interface ScheduleWithClass extends ClassSchedule {
   senseiName: string;
 }
 
-export default function SchedulePage() {
-  const { user, loading: authLoading } = useAuth();
+export function ScheduleTab() {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -101,7 +98,6 @@ export default function SchedulePage() {
 
       if (error) throw error;
 
-      // Enrich with class and sensei names
       const enriched: ScheduleWithClass[] = (data || []).map((schedule) => {
         const classInfo = classes?.find((c) => c.id === schedule.class_id);
         const sensei = senseiProfiles?.find((s) => s.user_id === classInfo?.sensei_id);
@@ -118,12 +114,10 @@ export default function SchedulePage() {
     enabled: !!user && !!classes,
   });
 
-  // Get schedules for a specific date
   const getSchedulesForDate = (date: Date) => {
     return schedules?.filter((s) => isSameDay(new Date(s.date), date)) || [];
   };
 
-  // Dates with schedules for calendar highlighting
   const datesWithSchedules = useMemo(() => {
     if (!schedules) return [];
     return schedules.map((s) => new Date(s.date));
@@ -148,17 +142,12 @@ export default function SchedulePage() {
     return time.slice(0, 5);
   };
 
-  if (authLoading || schedulesLoading) {
-    return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
+  if (schedulesLoading) {
+    return <LoadingSpinner />;
   }
 
   return (
-    <DashboardLayout>
-      <PageHeader 
-        title="Agenda" 
-        description="Calendário de aulas e eventos" 
-      />
-
+    <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
         {/* Calendar */}
         <Card>
@@ -280,8 +269,8 @@ export default function SchedulePage() {
         </Card>
       </div>
 
-      {/* Upcoming Classes - Mobile friendly list */}
-      <Card className="mt-6">
+      {/* Upcoming Classes */}
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
@@ -379,6 +368,6 @@ export default function SchedulePage() {
           )}
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </div>
   );
 }
