@@ -654,6 +654,8 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      link_admins_to_dojo: { Args: { _dojo_id: string }; Returns: undefined }
+      link_user_to_all_dojos: { Args: { _user_id: string }; Returns: undefined }
       remove_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
