@@ -567,6 +567,42 @@ export type Database = {
         }
         Relationships: []
       }
+      task_templates: {
+        Row: {
+          belt_level: string
+          category: string
+          created_at: string
+          description: string | null
+          difficulty: string
+          id: string
+          martial_art: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          belt_level: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          martial_art?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          belt_level?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          martial_art?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_by: string

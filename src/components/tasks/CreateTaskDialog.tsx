@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useTasks, TaskPriority, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { TaskTemplatesDialog } from "./TaskTemplatesDialog";
 
 const taskSchema = z.object({
   title: z.string().min(1, "Título obrigatório").max(100, "Máximo 100 caracteres"),
@@ -31,6 +32,7 @@ interface Student {
 
 export function CreateTaskDialog() {
   const [open, setOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const { createTask } = useTasks();
@@ -100,8 +102,23 @@ export function CreateTaskDialog() {
     }
   };
 
+  const handleSelectTemplate = (template: any) => {
+    // Map template category to form category
+    const categoryMap: Record<string, TaskCategory> = {
+      'technical': 'tecnica',
+      'physical': 'fisica',
+      'administrative': 'administrativa',
+      'other': 'outra',
+    };
+    
+    form.setValue('title', template.title);
+    form.setValue('description', template.description || '');
+    form.setValue('category', categoryMap[template.category] || 'outra');
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
@@ -110,7 +127,18 @@ export function CreateTaskDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Criar Nova Tarefa</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Criar Nova Tarefa</DialogTitle>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={() => setTemplatesOpen(true)}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              Banco de Tarefas
+            </Button>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
@@ -255,5 +283,12 @@ export function CreateTaskDialog() {
         </Form>
       </DialogContent>
     </Dialog>
+
+    <TaskTemplatesDialog
+      open={templatesOpen}
+      onOpenChange={setTemplatesOpen}
+      onSelectTemplate={handleSelectTemplate}
+    />
+    </>
   );
 }

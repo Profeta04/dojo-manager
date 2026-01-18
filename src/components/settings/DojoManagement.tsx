@@ -12,9 +12,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Building2, Plus, Edit, Trash2, Loader2, Users, CreditCard, MessageSquare } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Loader2, Users, CreditCard, MessageSquare, Image as ImageIcon } from "lucide-react";
 import { DojoOwnersDialog } from "./DojoOwnersDialog";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
+import { DojoLogoUpload } from "./DojoLogoUpload";
 
 interface DojoFormData {
   name: string;
@@ -25,6 +26,7 @@ interface DojoFormData {
   monthly_fee: string;
   payment_due_day: string;
   pix_key: string;
+  logo_url: string;
 }
 
 const initialFormData: DojoFormData = {
@@ -36,6 +38,7 @@ const initialFormData: DojoFormData = {
   monthly_fee: "",
   payment_due_day: "",
   pix_key: "",
+  logo_url: "",
 };
 
 export function DojoManagement() {
@@ -59,6 +62,7 @@ export function DojoManagement() {
         monthly_fee: data.monthly_fee ? parseFloat(data.monthly_fee) : null,
         payment_due_day: data.payment_due_day ? parseInt(data.payment_due_day) : null,
         pix_key: data.pix_key || null,
+        logo_url: data.logo_url || null,
       });
       if (error) throw error;
     },
@@ -84,6 +88,7 @@ export function DojoManagement() {
         monthly_fee: data.monthly_fee ? parseFloat(data.monthly_fee) : null,
         payment_due_day: data.payment_due_day ? parseInt(data.payment_due_day) : null,
         pix_key: data.pix_key || null,
+        logo_url: data.logo_url || null,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -134,6 +139,7 @@ export function DojoManagement() {
       monthly_fee: dojo.monthly_fee?.toString() || "",
       payment_due_day: dojo.payment_due_day?.toString() || "",
       pix_key: dojo.pix_key || "",
+      logo_url: dojo.logo_url || "",
     });
     setEditingDojo(dojo);
   };
@@ -141,6 +147,21 @@ export function DojoManagement() {
   const DojoFormFields = ({ isEdit = false }: { isEdit?: boolean }) => (
     <ScrollArea className="max-h-[70vh] pr-4">
       <div className="space-y-6">
+        {/* Logo Upload */}
+        {isEdit && editingDojo && (
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Logo
+            </h4>
+            <DojoLogoUpload
+              currentLogoUrl={formData.logo_url}
+              dojoId={editingDojo.id}
+              onUploadComplete={(url) => setFormData({ ...formData, logo_url: url })}
+            />
+          </div>
+        )}
+
         {/* Basic Info */}
         <div className="space-y-4">
           <h4 className="text-sm font-medium flex items-center gap-2">
