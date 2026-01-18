@@ -168,6 +168,15 @@
     box-shadow: 0 2px 8px -2px hsl(var(--foreground) / 0.2);
   }
 
+  /* Text with thin black outline for legibility on light backgrounds */
+  .text-outlined {
+    text-shadow: 
+      -0.5px -0.5px 0 hsl(0 0% 0% / 0.3),
+      0.5px -0.5px 0 hsl(0 0% 0% / 0.3),
+      -0.5px 0.5px 0 hsl(0 0% 0% / 0.3),
+      0.5px 0.5px 0 hsl(0 0% 0% / 0.3);
+  }
+
   /* Screen reader only utility */
   .sr-only {
     position: absolute;

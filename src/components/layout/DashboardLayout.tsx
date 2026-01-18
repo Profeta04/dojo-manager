@@ -1,8 +1,9 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
 import { useDojoContext } from "@/hooks/useDojoContext";
+import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -54,9 +55,33 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { profile, roles, signOut, isAdmin, isSensei } = useAuth();
   const { settings } = useDojoSettings();
   const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
+  const { getSignedUrl } = useSignedUrl();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   
   const showDojoSelector = userDojos.length > 1 && (isAdmin || isSensei);
+  
+  // Get current dojo logo
+  const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
+  
+  useEffect(() => {
+    const loadLogoUrl = async () => {
+      if (currentDojo?.logo_url) {
+        // Check if it's a storage path or a direct URL
+        if (currentDojo.logo_url.startsWith('http')) {
+          setLogoUrl(currentDojo.logo_url);
+        } else {
+          // Assume it's a storage path in a public bucket
+          const signedUrl = await getSignedUrl('dojo-logos', currentDojo.logo_url);
+          setLogoUrl(signedUrl);
+        }
+      } else {
+        setLogoUrl(null);
+      }
+    };
+    
+    loadLogoUrl();
+  }, [currentDojo?.logo_url, getSignedUrl]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -73,11 +98,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Logo */}
       <div className="p-6">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-foreground/20" aria-hidden="true">
-            <span className="text-xl">🥋</span>
-          </div>
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={`Logo ${settings.dojo_name}`}
+              className="w-10 h-10 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-foreground/20" aria-hidden="true">
+              <span className="text-xl">🥋</span>
+            </div>
+          )}
           <div>
-            <h1 className="font-bold text-lg text-primary-foreground">{settings.dojo_name}</h1>
+            <h1 className="font-bold text-lg text-primary-foreground text-outlined">{settings.dojo_name}</h1>
             <p className="text-xs text-primary-foreground/60">Sistema de Gestão</p>
           </div>
         </div>
@@ -168,10 +201,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       >
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-foreground/20" aria-hidden="true">
-              <span className="text-base">🥋</span>
-            </div>
-            <span className="font-semibold text-sm text-primary-foreground truncate max-w-[140px]">
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={`Logo ${settings.dojo_name}`}
+                className="w-8 h-8 rounded-lg object-cover"
+              />
+            ) : (
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-foreground/20" aria-hidden="true">
+                <span className="text-base">🥋</span>
+              </div>
+            )}
+            <span className="font-semibold text-sm text-primary-foreground text-outlined truncate max-w-[140px]">
               {settings.dojo_name}
             </span>
           </div>
