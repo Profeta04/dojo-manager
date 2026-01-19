@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { RequireApproval } from "@/components/auth/RequireApproval";
 import { GuardianPasswordGate } from "@/components/auth/GuardianPasswordGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -270,6 +271,7 @@ export default function StudentPaymentsPage() {
   }
 
   return (
+    <RequireApproval>
     <DashboardLayout>
       <PageHeader 
         title="Mensalidade" 
@@ -467,5 +469,6 @@ export default function StudentPaymentsPage() {
         </DialogContent>
       </Dialog>
     </DashboardLayout>
+    </RequireApproval>
   );
 }

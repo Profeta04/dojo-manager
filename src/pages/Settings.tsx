@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { RequireApproval } from "@/components/auth/RequireApproval";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, Palette } from "lucide-react";
 import { DojoManagement } from "@/components/settings/DojoManagement";
@@ -33,6 +34,7 @@ export default function Settings() {
   // Sensei can only see theme settings
   if (isSensei && !isAdmin && !isSuperAdmin && !isDono) {
     return (
+      <RequireApproval>
       <DashboardLayout>
         <PageHeader
           title="Configurações"
@@ -42,10 +44,12 @@ export default function Settings() {
           <DojoThemeSettings />
         </div>
       </DashboardLayout>
+      </RequireApproval>
     );
   }
 
   return (
+    <RequireApproval>
     <DashboardLayout>
       <PageHeader
         title="Configurações"
@@ -75,5 +79,6 @@ export default function Settings() {
         </TabsContent>
       </Tabs>
     </DashboardLayout>
+    </RequireApproval>
   );
 }

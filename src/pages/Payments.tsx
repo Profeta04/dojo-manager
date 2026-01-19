@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { RequireApproval } from "@/components/auth/RequireApproval";
 import { FinancialDashboard } from "@/components/payments/FinancialDashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -490,6 +491,7 @@ export default function PaymentsPage() {
   }
 
   return (
+    <RequireApproval>
     <DashboardLayout>
       <div className="flex flex-col gap-4 mb-6">
         <PageHeader title="Pagamentos" description="Controle de mensalidades dos alunos" />
@@ -1022,5 +1024,6 @@ export default function PaymentsPage() {
         </DialogContent>
       </Dialog>
     </DashboardLayout>
+    </RequireApproval>
   );
 }
