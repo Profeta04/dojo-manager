@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { RequireApproval } from "@/components/auth/RequireApproval";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { RegistrationStatusBadge } from "@/components/shared/StatusBadge";
 import { StudentReportDialog } from "@/components/students/StudentReportDialog";
@@ -330,6 +331,7 @@ export default function Students() {
   );
 
   return (
+    <RequireApproval>
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
@@ -528,5 +530,6 @@ export default function Students() {
         </AlertDialogContent>
       </AlertDialog>
     </DashboardLayout>
+    </RequireApproval>
   );
 }

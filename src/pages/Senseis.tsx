@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { RequireApproval } from "@/components/auth/RequireApproval";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { RegistrationStatusBadge } from "@/components/shared/StatusBadge";
 import { SenseiActions } from "@/components/senseis/SenseiActions";
@@ -219,6 +220,7 @@ export default function Senseis() {
   );
 
   return (
+    <RequireApproval>
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
@@ -417,5 +419,6 @@ export default function Senseis() {
         </CardContent>
       </Card>
     </DashboardLayout>
+    </RequireApproval>
   );
 }

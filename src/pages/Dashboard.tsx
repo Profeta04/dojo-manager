@@ -10,11 +10,11 @@ import { ExportReportButton } from "@/components/dashboard/ExportReportButton";
 import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
 import { StudentTasksDashboard } from "@/components/tasks/StudentTasksDashboard";
 import { TasksManagement } from "@/components/tasks/TasksManagement";
-import { AlertCircle } from "lucide-react";
+import { PendingApprovalScreen } from "@/components/auth/PendingApprovalScreen";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, loading: authLoading, profile, isAdmin, isStudent, canManageStudents } = useAuth();
+  const { user, loading: authLoading, profile, isAdmin, isStudent, canManageStudents, isPending } = useAuth();
   const { hasMinors } = useGuardianMinors();
 
   useEffect(() => {
@@ -31,7 +31,10 @@ export default function Dashboard() {
     );
   }
 
-  const isPending = profile?.registration_status === "pendente";
+  // Show pending approval screen if user is not approved
+  if (isPending) {
+    return <PendingApprovalScreen />;
+  }
 
   return (
     <DashboardLayout>
@@ -44,19 +47,6 @@ export default function Dashboard() {
           {canManageStudents && <ExportReportButton />}
         </div>
       </div>
-
-      {/* Pending Approval Warning */}
-      {isPending && (
-        <div className="mb-6 p-4 bg-warning/10 border border-warning/30 rounded-lg flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-warning mt-0.5" />
-          <div>
-            <p className="font-medium text-foreground">Cadastro pendente de aprovação</p>
-            <p className="text-sm text-muted-foreground">
-              Seu cadastro está sendo analisado. Aguarde a confirmação de um Sensei para ter acesso completo ao sistema.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Guardian Dashboard - Shows if user has linked minors */}
       {hasMinors && (
@@ -77,16 +67,14 @@ export default function Dashboard() {
         ) : null}
       </div>
 
-      {!isPending && (
-        <div className="mt-6 p-4 sm:p-6 bg-card rounded-lg border border-border">
-          <h2 className="text-base sm:text-lg font-semibold mb-2">🎯 Próximos passos</h2>
-          <p className="text-sm text-muted-foreground">
-            {canManageStudents 
-              ? "Use o menu lateral para gerenciar alunos, turmas, presenças e pagamentos."
-              : "Explore o menu para ver suas turmas, agenda e histórico de graduações."}
-          </p>
-        </div>
-      )}
+      <div className="mt-6 p-4 sm:p-6 bg-card rounded-lg border border-border">
+        <h2 className="text-base sm:text-lg font-semibold mb-2">🎯 Próximos passos</h2>
+        <p className="text-sm text-muted-foreground">
+          {canManageStudents 
+            ? "Use o menu lateral para gerenciar alunos, turmas, presenças e pagamentos."
+            : "Explore o menu para ver suas turmas, agenda e histórico de graduações."}
+        </p>
+      </div>
     </DashboardLayout>
   );
 }

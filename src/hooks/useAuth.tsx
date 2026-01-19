@@ -21,6 +21,8 @@ interface AuthContextType {
   isSensei: boolean;
   isStudent: boolean;
   canManageStudents: boolean;
+  isApproved: boolean;
+  isPending: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -132,6 +134,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSensei = roles.includes("sensei");
   const isStudent = roles.includes("student");
   const canManageStudents = isSuperAdmin || isDono || isAdmin || isSensei;
+  const isApproved = profile?.registration_status === "aprovado";
+  const isPending = profile?.registration_status === "pendente";
 
   return (
     <AuthContext.Provider
@@ -150,6 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isSensei,
         isStudent,
         canManageStudents,
+        isApproved,
+        isPending,
       }}
     >
       {children}
