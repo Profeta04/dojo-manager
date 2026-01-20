@@ -25,13 +25,43 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, CheckCircle2, XCircle, Users, Clock, Loader2, Save, CalendarDays } from "lucide-react";
-import { Tables } from "@/integrations/supabase/types";
 import { format, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-type ClassSchedule = Tables<"class_schedule">;
-type Profile = Tables<"profiles">;
-type Attendance = Tables<"attendance">;
+// Manual types until Supabase types are regenerated
+interface ClassSchedule {
+  id: string;
+  class_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  is_cancelled: boolean;
+  created_at: string;
+}
+
+interface Profile {
+  user_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  belt_grade: string | null;
+  birth_date: string | null;
+  registration_status: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Attendance {
+  id: string;
+  class_id: string;
+  student_id: string;
+  date: string;
+  present: boolean;
+  notes: string | null;
+  marked_by: string | null;
+  created_at: string;
+}
 
 interface ScheduleWithDetails extends ClassSchedule {
   className: string;

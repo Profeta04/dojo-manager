@@ -61,7 +61,7 @@ export function SenseiDojoDialog({
       const { data, error } = await supabase
         .from("dojo_senseis")
         .select("dojo_id")
-        .eq("user_id", senseiUserId);
+        .eq("sensei_id", senseiUserId);
 
       if (error) throw error;
       return data.map((d) => d.dojo_id);
@@ -92,7 +92,7 @@ export function SenseiDojoDialog({
       const { data: existingLinks } = await supabase
         .from("dojo_senseis")
         .select("id, dojo_id")
-        .eq("user_id", senseiUserId);
+        .eq("sensei_id", senseiUserId);
 
       const existingDojoIds = existingLinks?.map((l) => l.dojo_id) || [];
 
@@ -112,9 +112,9 @@ export function SenseiDojoDialog({
           .from("dojo_senseis")
           .insert(
             dojosToAdd.map((dojoId) => ({
-              user_id: senseiUserId,
+              sensei_id: senseiUserId,
               dojo_id: dojoId,
-            }))
+            })) as any
           );
 
         if (insertError) throw insertError;

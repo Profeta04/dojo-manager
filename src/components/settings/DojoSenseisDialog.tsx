@@ -34,7 +34,7 @@ export function DojoSenseisDialog({ dojoId, onClose }: Props) {
       // Fetch profiles for each sensei
       if (senseisData.length === 0) return [];
 
-      const userIds = senseisData.map((s) => s.user_id);
+      const userIds = senseisData.map((s: any) => s.sensei_id);
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, name, email")
@@ -42,9 +42,9 @@ export function DojoSenseisDialog({ dojoId, onClose }: Props) {
 
       if (profilesError) throw profilesError;
 
-      return senseisData.map((sensei) => ({
+      return senseisData.map((sensei: any) => ({
         ...sensei,
-        profile: profiles?.find((p) => p.user_id === sensei.user_id),
+        profile: profiles?.find((p) => p.user_id === sensei.sensei_id),
       }));
     },
     enabled: !!dojoId,
@@ -78,8 +78,8 @@ export function DojoSenseisDialog({ dojoId, onClose }: Props) {
       // Add as sensei
       const { error: senseiError } = await supabase.from("dojo_senseis").insert({
         dojo_id: dojoId!,
-        user_id: profile.user_id,
-      });
+        sensei_id: profile.user_id,
+      } as any);
 
       if (senseiError) {
         if (senseiError.code === "23505") {
