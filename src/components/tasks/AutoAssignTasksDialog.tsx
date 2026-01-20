@@ -51,8 +51,8 @@ const CATEGORY_CONFIG: Record<string, { icon: any; label: string }> = {
 };
 
 const BELT_ORDER = [
-  "branca", "cinza", "azul", "amarela", "laranja", "verde", "roxa", "marrom",
-  "preta_1dan", "preta_2dan", "preta_3dan"
+  "branca", "cinza", "amarela", "laranja", "verde", "azul", "roxa", "marrom", "preta",
+  "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan", "preta_5dan"
 ];
 
 export function AutoAssignTasksDialog() {
