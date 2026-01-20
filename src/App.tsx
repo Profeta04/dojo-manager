@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Senseis from "./pages/Senseis";
 import Classes from "./pages/Classes";
+import StudentAgenda from "./pages/StudentAgenda";
 import Graduations from "./pages/Graduations";
 import Payments from "./pages/Payments";
 import StudentPayments from "./pages/StudentPayments";
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="/students" element={<Students />} />
                 <Route path="/senseis" element={<Senseis />} />
                 <Route path="/classes" element={<Classes />} />
+                <Route path="/agenda" element={<StudentAgenda />} />
                 <Route path="/payments" element={<Payments />} />
                 <Route path="/mensalidade" element={<StudentPayments />} />
                 <Route path="/graduations" element={<Graduations />} />
