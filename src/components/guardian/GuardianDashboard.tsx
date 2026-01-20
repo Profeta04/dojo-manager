@@ -59,7 +59,7 @@ export function GuardianDashboard() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {minors.map((minor) => (
               <Card 
-                key={minor.id} 
+                key={minor.user_id} 
                 className="cursor-pointer hover:shadow-md transition-shadow border-border/50 hover:border-primary/30"
                 onClick={() => setSelectedMinor(minor)}
               >
@@ -69,10 +69,10 @@ export function GuardianDashboard() {
                       <h3 className="font-semibold text-foreground">{minor.name}</h3>
                       <div className="flex flex-wrap gap-2">
                         {minor.belt_grade && (
-                          <BeltBadge grade={minor.belt_grade} />
+                          <BeltBadge grade={minor.belt_grade as any} />
                         )}
                         {minor.registration_status && (
-                          <RegistrationStatusBadge status={minor.registration_status} />
+                          <RegistrationStatusBadge status={minor.registration_status as any} />
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">{minor.email}</p>

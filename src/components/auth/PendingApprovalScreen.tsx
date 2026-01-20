@@ -26,7 +26,7 @@ export function PendingApprovalScreen() {
             Aguarde a confirmação
           </h1>
           <p className="text-muted-foreground">
-            Olá, <span className="font-medium text-foreground">{profile?.name?.split(" ")[0] || "Judoca"}</span>!
+            Olá, <span className="font-medium text-foreground">{profile?.name?.split(" ")[0] ?? "Judoca"}</span>!
           </p>
         </div>
 

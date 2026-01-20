@@ -516,7 +516,7 @@ export function ClassesTab() {
                       <p className="text-xs font-medium text-muted-foreground mb-2">Alunos:</p>
                       <div className="flex flex-wrap gap-1">
                         {cls.students.slice(0, 5).map((student) => (
-                          <Badge key={student.id} variant="outline" className="text-xs">
+                          <Badge key={student.user_id} variant="outline" className="text-xs">
                             {student.name?.split(" ")[0]}
                             {canManageStudents && (
                               <button onClick={() => { setSelectedClass(cls); handleRemoveStudent(student.user_id); }} className="ml-1 hover:text-destructive">
@@ -641,7 +641,7 @@ export function ClassesTab() {
               <SelectContent>
                 {availableStudents && availableStudents.length > 0 ? (
                   availableStudents.map((student) => (
-                    <SelectItem key={student.id} value={student.user_id}>{student.name}</SelectItem>
+                    <SelectItem key={student.user_id} value={student.user_id}>{student.name}</SelectItem>
                   ))
                 ) : (
                   <div className="p-2 text-sm text-muted-foreground text-center">Nenhum aluno disponível</div>

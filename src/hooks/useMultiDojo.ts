@@ -34,7 +34,7 @@ export interface DojoOwner {
 export interface DojoSensei {
   id: string;
   dojo_id: string;
-  user_id: string;
+  sensei_id: string;
   created_at: string;
 }
 
@@ -51,7 +51,7 @@ export function useDojos() {
         .order("name");
 
       if (error) throw error;
-      return data as Dojo[];
+      return (data as any) as Dojo[];
     },
     enabled: !!user && isSuperAdmin,
   });

@@ -79,10 +79,10 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
         belt_grade: editBeltGrade as BeltGradeEnum || null,
       };
 
-      const { error } = await supabase
-        .from("profiles")
+      const { error } = await (supabase
+        .from("profiles") as any)
         .update(updateData)
-        .eq("id", sensei.id);
+        .eq("user_id", sensei.user_id);
 
       if (error) throw error;
 
@@ -110,7 +110,7 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
 
     try {
       // Remove sensei role, keeping user as a regular user
-      const { error } = await supabase.rpc("remove_user_role", {
+      const { error } = await supabase.rpc("remove_user_role" as any, {
         _user_id: sensei.user_id,
         _role: "sensei",
       });
@@ -118,7 +118,7 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
       if (error) throw error;
 
       // Assign student role instead
-      await supabase.rpc("assign_user_role", {
+      await supabase.rpc("assign_user_role" as any, {
         _user_id: sensei.user_id,
         _role: "student",
       });
@@ -147,18 +147,18 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
 
     try {
       // First remove the sensei role
-      await supabase.rpc("remove_user_role", {
+      await supabase.rpc("remove_user_role" as any, {
         _user_id: sensei.user_id,
         _role: "sensei",
       });
 
       // Update profile to rejected status (soft delete)
-      const { error } = await supabase
-        .from("profiles")
+      const { error } = await (supabase
+        .from("profiles") as any)
         .update({ 
           registration_status: "rejeitado" 
         })
-        .eq("id", sensei.id);
+        .eq("user_id", sensei.user_id);
 
       if (error) throw error;
 
