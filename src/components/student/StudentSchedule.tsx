@@ -458,6 +458,36 @@ export function StudentSchedule() {
         </Card>
       </div>
 
+      {/* Today's Training Alert */}
+      {upcomingToday.length > 0 && (
+        <Card className="border-2 border-accent bg-gradient-to-r from-accent/10 via-accent/5 to-transparent animate-pulse-subtle">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="h-14 w-14 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 ring-4 ring-accent/30">
+                <span className="text-3xl">🥋</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-xl text-accent-foreground">Você tem treino hoje!</h3>
+                <p className="text-sm text-muted-foreground mb-3">Não se esqueça de comparecer</p>
+                <div className="space-y-2">
+                  {upcomingToday.map(s => (
+                    <div key={s.id} className="flex items-center gap-3 p-3 bg-background/80 rounded-lg border">
+                      <Clock className="h-5 w-5 text-accent" />
+                      <div>
+                        <span className="font-semibold">{s.class_name}</span>
+                        <span className="text-muted-foreground"> às </span>
+                        <span className="font-mono font-bold text-accent">{formatTime(s.start_time)}</span>
+                        <span className="text-muted-foreground"> - </span>
+                        <span className="font-mono">{formatTime(s.end_time)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Attendance History with Justify Option */}
       <Card>

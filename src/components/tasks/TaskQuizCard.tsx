@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, XCircle, BookOpen, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, BookOpen, Loader2, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTasks, TaskWithAssignee } from "@/hooks/useTasks";
 import { toast } from "sonner";
@@ -13,9 +13,10 @@ interface TaskQuizCardProps {
   task: TaskWithAssignee;
   options: string[];
   correctOption: number;
+  videoUrl?: string;
 }
 
-export function TaskQuizCard({ task, options, correctOption }: TaskQuizCardProps) {
+export function TaskQuizCard({ task, options, correctOption, videoUrl }: TaskQuizCardProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -59,6 +60,17 @@ export function TaskQuizCard({ task, options, correctOption }: TaskQuizCardProps
         </div>
         {task.description && (
           <p className="text-sm text-muted-foreground mt-2">{task.description}</p>
+        )}
+        {videoUrl && (
+          <a
+            href={videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-2 text-sm text-red-600 hover:text-red-700 font-medium"
+          >
+            <Youtube className="h-4 w-4" />
+            Assistir vídeo de apoio
+          </a>
         )}
       </CardHeader>
       <CardContent>
