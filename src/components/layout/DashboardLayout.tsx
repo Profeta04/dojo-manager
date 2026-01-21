@@ -35,32 +35,33 @@ interface NavItem {
   title: string;
   href: string;
   icon: ReactNode;
-  roles?: ("admin" | "sensei" | "student")[];
+  adminOnly?: boolean; // Shows for super_admin, dono, admin, sensei
+  studentOnly?: boolean; // Shows only for students
 }
 
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-  { title: "Alunos", href: "/students", icon: <Users className="h-5 w-5" />, roles: ["admin", "sensei"] },
-  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-5 w-5" />, roles: ["admin"] },
-  { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-5 w-5" />, roles: ["admin", "sensei"] },
-  { title: "Agenda", href: "/agenda", icon: <GraduationCap className="h-5 w-5" />, roles: ["student"] },
-  { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-5 w-5" />, roles: ["admin", "sensei"] },
-  { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, roles: ["student"] },
-  { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" />, roles: ["admin", "sensei"] },
-  { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, roles: ["admin", "sensei"] },
+  { title: "Alunos", href: "/students", icon: <Users className="h-5 w-5" />, adminOnly: true },
+  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-5 w-5" />, adminOnly: true },
+  { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-5 w-5" />, adminOnly: true },
+  { title: "Agenda", href: "/agenda", icon: <GraduationCap className="h-5 w-5" />, studentOnly: true },
+  { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-5 w-5" />, adminOnly: true },
+  { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, studentOnly: true },
+  { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" />, adminOnly: true },
+  { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, adminOnly: true },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, roles, signOut, isAdmin, isSensei } = useAuth();
+  const { profile, signOut, canManageStudents, isStudent, isSuperAdmin, isDono, isAdmin, isSensei } = useAuth();
   const { settings } = useDojoSettings();
   const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
   const { getSignedUrl } = useSignedUrl();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   
-  const showDojoSelector = userDojos.length > 1 && (isAdmin || isSensei);
+  const showDojoSelector = userDojos.length > 1 && canManageStudents;
   
   // Get current dojo logo
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
@@ -90,8 +91,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const filteredNavItems = navItems.filter((item) => {
-    if (!item.roles) return true;
-    return item.roles.some((role) => roles.includes(role));
+    // Dashboard is always visible
+    if (!item.adminOnly && !item.studentOnly) return true;
+    // Admin-only items for super_admin, dono, admin, sensei
+    if (item.adminOnly && canManageStudents) return true;
+    // Student-only items
+    if (item.studentOnly && isStudent && !canManageStudents) return true;
+    return false;
   });
 
   const NavContent = () => (
@@ -168,7 +174,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <BeltBadge grade={profile.belt_grade as any} size="sm" />
               )}
               <span className="text-xs text-primary-foreground/60">
-                {isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
+                {isSuperAdmin ? "Super Admin" : isDono ? "Dono" : isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
               </span>
             </div>
           </div>
