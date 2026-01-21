@@ -245,16 +245,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Desktop Sidebar - Always visible on lg+ */}
+      <aside
+        className="hidden lg:flex fixed top-0 left-0 z-40 h-full w-64 bg-primary border-r border-primary/20 flex-col"
+        role="navigation"
+        aria-label="Menu lateral desktop"
+      >
+        <NavContent />
+      </aside>
+
+      {/* Mobile Sidebar - Slide in/out */}
       <aside
         id="mobile-sidebar"
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-[280px] lg:w-64 bg-primary border-r border-primary/20 flex flex-col transition-transform duration-300 ease-out lg:translate-x-0",
+          "lg:hidden fixed top-0 left-0 z-50 h-full w-[280px] bg-primary border-r border-primary/20 flex flex-col transition-transform duration-300 ease-out",
           "will-change-transform",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
         role="navigation"
-        aria-label="Menu lateral"
+        aria-label="Menu lateral mobile"
       >
         <NavContent />
       </aside>
